@@ -6,8 +6,9 @@
   <title>Lecteur IPTV</title>
 </head>
 <body>
+  <h1>Lecteur IPTV</h1>
   <video id="video" controls style="width:100%;max-width:800px"></video>
-  <div id="error" style="color:red"></div>
+  <div id="error" style="color:red;margin-top:10px;"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.0/dist/hls.min.js"></script>
   <script>
@@ -15,10 +16,19 @@
     const errorEl = document.getElementById('error');
     let hls;
 
+    // Fonction pour trouver le bon chemin sur GitHub Pages
+    function getBasePath() {
+      const pathParts = window.location.pathname.split('/');
+      if (pathParts.length > 2 && pathParts[1] !== '') {
+        return '/' + pathParts[1] + '/';
+      }
+      return '/';
+    }
+
     async function loadDefault(){
       try {
-        // Utilisation d'un chemin absolu relatif au site Netlify
-        const res = await fetch(window.location.origin + '/fr.m3u', { cache: 'no-cache' });
+        const basePath = getBasePath();
+        const res = await fetch(basePath + 'fr.m3u', { cache: 'no-cache' });
         if (!res.ok) throw new Error('HTTP '+res.status);
         const txt = await res.text();
         const channels = parseM3U(txt);
