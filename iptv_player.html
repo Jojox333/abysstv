@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lecteur IPTV</title>
+</head>
+<body>
+  <video id="video" controls style="width:100%;max-width:800px"></video>
+  <div id="error" style="color:red"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.0/dist/hls.min.js"></script>
+  <script>
+    const video = document.getElementById('video');
+    const errorEl = document.getElementById('error');
+    let hls;
+
+    async function loadDefault(){
+      try {
+        // Utilisation d'un chemin absolu relatif au site Netlify
+        const res = await fetch(window.location.origin + '/fr.m3u', { cache: 'no-cache' });
+        if (!res.ok) throw new Error('HTTP '+res.status);
+        const txt = await res.text();
+        const channels = parseM3U(txt);
+        if (!channels.length) throw new Error('Aucune URL trouvée dans fr.m3u');
+        playChannel(channels[0].url);
+      } catch(err) {
+        errorEl.textContent = 'Impossible de charger fr.m3u : ' + err.message;
+      }
+    }
+
+    function parseM3U(text){
+      const lines = text.split(/\r?\n/).map(l=>l.trim());
+      const channels = [];
+      for (let i=0;i<lines.length;i++){
+        if (lines[i].startsWith('#EXTINF')){
+          const url = lines[i+1];
+          if (url && !url.startsWith('#')) channels.push({url});
+        }
+      }
+      return channels;
+    }
+
+    function playChannel(url){
+      if (video.canPlayType('application/vnd.apple.mpegurl')){
+        video.src = url;
+        video.play();
+      } else if (Hls.isSupported()){
+        hls = new Hls();
+        hls.loadSource(url);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.ERROR, (e,data)=>{
+          errorEl.textContent = 'Erreur HLS: ' + data.details;
+        });
+      } else {
+        errorEl.textContent = 'HLS non supporté par ce navigateur.';
+      }
+    }
+
+    loadDefault();
+  </script>
+</body>
+</html>
